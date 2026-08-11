@@ -469,8 +469,6 @@ public struct PodState: RawRepresentable, Equatable, CustomDebugStringConvertibl
 
     // MARK: - RawRepresentable
     public init?(rawValue: RawValue) {
-        log.bleDebug("[PodState] init with rawValue: %{public}@", String(describing: rawValue))
-
         guard
             let address = rawValue["address"] as? UInt32,
             let lotNo = rawValue["lotNo"] as? UInt32 ?? rawValue["lot"] as? UInt32,

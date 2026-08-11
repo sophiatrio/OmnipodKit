@@ -38,7 +38,7 @@ class Milenage {
     var receivedMacS: Data
 
     init(k: Data, sqn: Data, randParam: Data? = nil, auts: Data = Data(repeating: 0x00, count: 14), amf: Data = Milenage.MILENAGE_AMF) throws {
-        guard (k.count == Milenage.KEY_SIZE) else { throw MilenageError.Error("Milenage key has to be \(Milenage.KEY_SIZE) bytes long. Received: \(k.hexadecimalString)") }
+        guard (k.count == Milenage.KEY_SIZE) else { throw MilenageError.Error("Milenage key has to be \(Milenage.KEY_SIZE) bytes long. Received: \(k.count) bytes") }
         guard (sqn.count == Milenage.SQN) else { throw MilenageError.Error("Milenage SQN has to be \(Milenage.SQN) long. Received: \(sqn.hexadecimalString)") }
         guard (auts.count == Milenage.AUTS_SIZE) else { throw MilenageError.Error("Milenage AUTS has to be \(Milenage.AUTS_SIZE) long. Received: \(auts.hexadecimalString)") }
         guard (amf.count == Milenage.MILENAGE_AMF.count) else {
