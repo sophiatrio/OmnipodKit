@@ -217,8 +217,6 @@ public struct OmniPumpManagerState: RawRepresentable, Equatable {
         /// OmnipodKit renamed this to a more appropriate maxBasalRateUnitsPerHour, even though OmnipodKit isn't currently
         /// enforcing this for scheduled basal rates as Trio doesn't enforce this in its UI leading to confusing failures
         /// with an out of range value during operations like saving a basal schedule, resuming, setting pump time, etc.
-        /// OmnipodKit is now also not enforcing this limit for temp basals rates to prevent various issues in Trio
-        /// when its Maximum Basal Rate value isn't properly sync'ed with the OmniPumpManagerState values.
         let maxBasalRateUnitsPerHour = rawValue["maxBasalRateUnitsPerHour"] as? Double ??
                                         rawValue["maximumTempBasalRate"] as? Double ?? Pod.maximumBasalUnitsPerHour
 
