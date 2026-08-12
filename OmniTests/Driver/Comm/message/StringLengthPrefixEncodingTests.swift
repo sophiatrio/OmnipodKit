@@ -25,4 +25,11 @@ class StringLengthPrefixEncodingTests: XCTestCase {
         assert(parsed.count ==  1)
         assert(parsed[0].toHexString() == p0Content.toHexString())
     }
+
+    // The length is measured after its two-byte prefix; counting the prefix as
+    // payload previously allowed this truncated frame to reach an invalid slice.
+    func testRejectsTruncatedValue() {
+        let payload = Data([0x50, 0x30, 0x3d, 0x00, 0x04, 0xaa, 0xbb])
+        XCTAssertThrowsError(try StringLengthPrefixEncoding.parseKeys(["P0="], payload))
+    }
 }

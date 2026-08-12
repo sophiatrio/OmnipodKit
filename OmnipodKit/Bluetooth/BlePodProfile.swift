@@ -57,7 +57,7 @@ struct BlePodProfile {
         let valueUpdateMacros: [CBUUID: (_ manager: PeripheralManager) -> Void] = [
             commandCharacteristicUUID: { (manager: PeripheralManager) in
                 guard let characteristic = manager.peripheral.getCommandCharacteristic(profile: manager.profile) else { return }
-                guard let value = characteristic.value else { return }
+                guard let value = characteristic.value, !value.isEmpty else { return }
 
                 manager.log.bleDebug("[BLE RAW] CMD RECV: %{public}@", value.hexadecimalString)
                 manager.queueLock.lock()
@@ -67,7 +67,7 @@ struct BlePodProfile {
             },
             dataCharacteristicUUID: { (manager: PeripheralManager) in
                 guard let characteristic = manager.peripheral.getDataCharacteristic(profile: manager.profile) else { return }
-                guard let value = characteristic.value else { return }
+                guard let value = characteristic.value, !value.isEmpty else { return }
 
                 manager.log.bleDebug("[BLE RAW] DATA RECV: %{public}@", value.hexadecimalString)
                 manager.queueLock.lock()
