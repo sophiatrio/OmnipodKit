@@ -189,10 +189,10 @@ class O5LTKExchanger {
         try o5validateP0(p0)
 
         guard keyExchange.ltk.count == 16 else {
-            throw PodProtocolError.invalidLTKKey("Invalid Key, got \(String(data: keyExchange.ltk, encoding: .utf8) ?? "")")
+            throw PodProtocolError.invalidLTKKey("Invalid key length: \(keyExchange.ltk.count)")
         }
 
-        log.default("=== O5 Pairing Complete === LTK: %{public}@, address: 0x%{public}x, seq: %{public}d", keyExchange.ltk.hexadecimalString, ids.podId.toUInt32(), seq)
+        log.default("=== O5 Pairing Complete === address: 0x%{public}x, seq: %{public}d", ids.podId.toUInt32(), seq)
         return PairResult(
             ltk: keyExchange.ltk,
             address: ids.podId.toUInt32(),
@@ -353,8 +353,7 @@ class O5LTKExchanger {
         // Encrypt cert-only plaintext with AES-CCM: key=conf, nonce=13B, tag=8
         let nonce = keyExchange.getSPSNonce(direction: .write)
         let key = keyExchange.conf
-        log.info("Encrypting SPS2.1: key=%{public}@, nonce=%{public}@, plaintext=%{public}d bytes",
-                 Array(key).toHexString(), Array(nonce).toHexString(), certDER.count)
+        log.info("Encrypting SPS2.1: plaintext=%{public}d bytes", certDER.count)
         let encrypted: [UInt8]
         do {
             let ccm = CCM(iv: Array(nonce), tagLength: 8, messageLength: certDER.count)
@@ -389,14 +388,14 @@ class O5LTKExchanger {
         // Decrypt the pod's SPS2.1 payload
         let nonce = keyExchange.getSPSNonce(direction: .read)
         let key = keyExchange.conf
-        log.info("Decrypting pod SPS2.1: key=%{public}@, nonce=%{public}@, ciphertext=%{public}d bytes", key.toHexString(), Array(nonce).toHexString(), payload.count)
+        log.info("Decrypting pod SPS2.1: ciphertext=%{public}d bytes", payload.count)
         let decryptedPayload: Data
         do {
             let ccm = CCM(iv: Array(nonce), tagLength: 8, messageLength: payload.count - 8)
             let aes = try AES(key: Array(key), blockMode: ccm, padding: .noPadding)
             decryptedPayload = Data(try aes.decrypt(Array(payload)))
         } catch {
-            log.error("AES-CCM decrypt FAILED for pod SPS2.1: key=%{public}@, nonce=%{public}@, payload=%{public}d bytes, error=%{public}@", key.toHexString(), Array(nonce).toHexString(), payload.count, String(describing: error))
+            log.error("AES-CCM decrypt FAILED for pod SPS2.1: payload=%{public}d bytes, error=%{public}@", payload.count, String(describing: error))
             throw PodProtocolError.pairingException("Pod SPS2.1 decrypt failed (\(payload.count) bytes): \(error)")
         }
         keyExchange.incrementNonce(direction: .read)
@@ -451,8 +450,7 @@ class O5LTKExchanger {
         // Encrypt with AES-CCM: key=conf, nonce=13B, tag=8
         let nonce = keyExchange.getSPSNonce(direction: .write)
         let key = keyExchange.conf
-        log.info("Encrypting SPS2: key=%{public}@, nonce=%{public}@, plaintext=%{public}d bytes",
-                 Array(key).toHexString(), Array(nonce).toHexString(), plaintext.count)
+        log.info("Encrypting SPS2: plaintext=%{public}d bytes", plaintext.count)
         let encrypted: [UInt8]
         do {
             let ccm = CCM(iv: Array(nonce), tagLength: 8, messageLength: plaintext.count)
@@ -486,14 +484,14 @@ class O5LTKExchanger {
         // Decrypt the pod's SPS2 payload
         let nonce = keyExchange.getSPSNonce(direction: .read)
         let key = keyExchange.conf
-        log.info("Decrypting pod SPS2: key=%{public}@, nonce=%{public}@, ciphertext=%{public}d bytes", key.toHexString(), Array(nonce).toHexString(), payload.count)
+        log.info("Decrypting pod SPS2: ciphertext=%{public}d bytes", payload.count)
         let decryptedPayload: Data
         do {
             let ccm = CCM(iv: Array(nonce), tagLength: 8, messageLength: payload.count - 8)
             let aes = try AES(key: Array(key), blockMode: ccm, padding: .noPadding)
             decryptedPayload = Data(try aes.decrypt(Array(payload)))
         } catch {
-            log.error("AES-CCM decrypt FAILED for pod SPS2: key=%{public}@, nonce=%{public}@, payload=%{public}d bytes, error=%{public}@", key.toHexString(), Array(nonce).toHexString(), payload.count, String(describing: error))
+            log.error("AES-CCM decrypt FAILED for pod SPS2: payload=%{public}d bytes, error=%{public}@", payload.count, String(describing: error))
             throw PodProtocolError.pairingException("Pod SPS2 decrypt failed (\(payload.count) bytes): \(error)")
         }
         keyExchange.incrementNonce(direction: .read)
