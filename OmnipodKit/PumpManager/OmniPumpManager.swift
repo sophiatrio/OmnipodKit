@@ -2849,13 +2849,9 @@ extension OmniPumpManager: PumpManager {
     }
 
     public func enactTempBasal(unitsPerHour: Double, for duration: TimeInterval, automatic: Bool, completion: @escaping (PumpManagerError?) -> Void) {
-        if unitsPerHour > state.maxBasalRateUnitsPerHour {
-            /// The app is trying to set a TBR above the configured max basal. This can happen if the
-            /// app isn't properly sync'ing its max basal rate to the Pump Manager. Rather than returning
-            /// an invalidSetting error that could stop looping, log and continue (loopandlearn #85
-            /// workaround for mismatched basal limits).
-            log.error("@@@ runTemporaryBasalProgram requested unitsPerHour %{public}@ exceeds configured maxBasal of %{public}@!",
-                      String(describing: unitsPerHour), String(describing: state.maxBasalRateUnitsPerHour))
+        guard unitsPerHour <= state.maxBasalRateUnitsPerHour else {
+            completion(.configuration(OmniPumpManagerError.invalidSetting))
+            return
         }
 
         guard self.hasActivePod, let podState = self.state.podState else {

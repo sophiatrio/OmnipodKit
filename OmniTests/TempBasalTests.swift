@@ -8,6 +8,8 @@
 //
 
 import Foundation
+import LoopKit
+import RileyLinkBLEKit
 
 import XCTest
 @testable import OmnipodKit
@@ -360,4 +362,71 @@ class TempBasalTests: XCTestCase {
         let cmd = TempBasalExtraCommand(rate: 29.95, duration: .hours(12), acknowledgementBeep: false, completionBeep: false, programReminderInterval: .minutes(60), podType: dashType)
         XCTAssertEqual("16143c00f5af00092ba9f5af00092ba9231900092ba9", cmd.data.hexadecimalString)
     }
+    // Reject above-limit requests before pod access; at-limit requests must reach pod validation.
+    func testTempBasalRateCannotExceedConfiguredMaximum() {
+        let maximum = 5.0
+        let pumpManager = makePumpManager(maximumBasalRate: maximum)
+
+        var overLimitResult: PumpManagerError?
+        pumpManager.enactTempBasal(unitsPerHour: maximum + 0.05, for: .minutes(30), automatic: false) {
+            overLimitResult = $0
+        }
+
+        guard let overLimitResult,
+              case .configuration(let underlyingError) = overLimitResult,
+              let omniError = underlyingError as? OmniPumpManagerError,
+              case .invalidSetting = omniError
+        else {
+            XCTFail("Expected an invalid-setting error before pod access")
+            return
+        }
+
+        var atLimitResult: PumpManagerError?
+        pumpManager.enactTempBasal(unitsPerHour: maximum, for: .minutes(30), automatic: false) {
+            atLimitResult = $0
+        }
+
+        guard let atLimitResult,
+              case .configuration(let underlyingError) = atLimitResult,
+              let omniError = underlyingError as? OmniPumpManagerError,
+              case .noPodPaired = omniError
+        else {
+            XCTFail("Expected an at-limit request to proceed to pod validation")
+            return
+        }
+    }
+
+    private func makePumpManager(maximumBasalRate: Double) -> OmniPumpManager {
+        let state = OmniPumpManagerState(
+            isOnboarded: false,
+            podState: nil,
+            timeZone: TimeZone(secondsFromGMT: 0)!,
+            basalSchedule: BasalSchedule(entries: [
+                BasalScheduleEntry(rate: 1, startTime: 0, podType: unknownOmnipodType)
+            ]),
+            maxBasalRateUnitsPerHour: maximumBasalRate,
+            maxBolusUnits: 10,
+            insulinType: nil,
+            podType: unknownOmnipodType,
+            podKeepAlive: .disabled
+        )
+        return OmniPumpManager(state: state, rileyLinkDeviceProvider: TestRileyLinkDeviceProvider())
+    }
+}
+
+private final class TestRileyLinkDeviceProvider: RileyLinkDeviceProvider {
+    weak var delegate: RileyLinkDeviceProviderDelegate?
+    var idleListeningState = RileyLinkBluetoothDevice.IdleListeningState.disabled
+    var idleListeningEnabled: Bool { false }
+    var timerTickEnabled = false
+    var connectingCount: Int { 0 }
+    var debugDescription: String { "TestRileyLinkDeviceProvider" }
+
+    func deprioritize(_ device: RileyLinkDevice, completion: (() -> Void)?) { completion?() }
+    func assertIdleListening(forcingRestart: Bool) {}
+    func getDevices(_ completion: @escaping ([RileyLinkDevice]) -> Void) { completion([]) }
+    func connect(_ device: RileyLinkDevice) {}
+    func disconnect(_ device: RileyLinkDevice) {}
+    func setScanningEnabled(_ enabled: Bool) {}
+    func shouldConnect(to deviceID: String) -> Bool { false }
 }
