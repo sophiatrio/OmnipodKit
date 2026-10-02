@@ -55,7 +55,10 @@ struct EapMessage {
     private static let AKA_PACKET_TYPE = 0x17
 
     static func parse(payload: Data) throws -> EapMessage {
-        guard payload.count > 4 else { throw MessageError.notEnoughData }
+        guard payload.count >= 4 else { throw MessageError.notEnoughData }
+        guard let code = EapCode(rawValue: payload[0]) else {
+            throw MessageError.validationFailed(description: "Invalid EAP code.")
+        }
 
         let totalSize = (Int(payload[2]) << 8) | Int(payload[3])
         guard payload.count == totalSize else { throw MessageError.notEnoughData }
@@ -63,18 +66,19 @@ struct EapMessage {
 
         if (payload.count == 4) { // SUCCESS/FAILURE
             return EapMessage(
-                code: EapCode(rawValue: payload[0])!,
+                code: code,
                 identifier: payload[1],
                 attributes: []
             )
         }
-        if (totalSize > 0 && payload[4] != AKA_PACKET_TYPE) {
+        guard totalSize >= HEADER_SIZE else { throw MessageError.notEnoughData }
+        if payload[4] != AKA_PACKET_TYPE {
             throw MessageError.validationFailed(description: "Invalid eap payload.")
         }
         let attributesPayload = payload.subdata(in: 8..<totalSize)
 
         return EapMessage(
-            code: EapCode(rawValue: payload[0])!,
+            code: code,
             identifier: payload[1],
             subType: payload[5],
             attributes: try EapAkaAttribute.parseAttributes(payload: attributesPayload)

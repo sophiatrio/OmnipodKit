@@ -34,6 +34,29 @@ class MessagePacketTests: XCTestCase {
     }
     
     
+    // The wire length excludes the authentication tag; accepting the declared
+    // body without its tag previously trapped while slicing the packet.
+    func testRejectsTruncatedEncryptedPacket() {
+        let payload = Data(hexadecimalString: payloadString)!
+        XCTAssertThrowsError(try MessagePacket.parse(payload: Data(payload.dropLast(8))))
+    }
+
+    func testEapEnvelopeParsingIsTotal() throws {
+        let success = try EapMessage.parse(payload: Data([EapCode.SUCCESS.rawValue, 7, 0, 4]))
+        XCTAssertEqual(success.code.rawValue, EapCode.SUCCESS.rawValue)
+        XCTAssertEqual(success.identifier, 7)
+
+        let malformed = [
+            Data([0xff, 0, 0, 4]),
+            Data([EapCode.REQUEST.rawValue, 0, 0, 5, 0x17]),
+            Data([EapCode.REQUEST.rawValue, 0, 0, 12, 0x17, 1, 0, 0, 1, 1, 0, 0])
+        ]
+        for payload in malformed {
+            XCTAssertThrowsError(try EapMessage.parse(payload: payload))
+        }
+    }
+
+
     func testSerializeMessagePacket() {
         let payload = Data(hexadecimalString: payloadString)!
         let msg = MessagePacket(type: .ENCRYPTED,

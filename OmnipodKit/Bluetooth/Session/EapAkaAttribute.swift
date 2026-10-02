@@ -40,16 +40,22 @@ class EapAkaAttribute {
             let type = EapAkaAttributeType(rawValue: tail[0])
             switch (type) {
             case .AT_RES:
+                guard size >= EapAkaAttributeRes.SIZE else { throw MessageError.notEnoughData }
                 ret.append(try EapAkaAttributeRes.parse(payload: tail.subdata(in: 2..<EapAkaAttributeRes.SIZE)))
             case .AT_CUSTOM_IV:
+                guard size >= EapAkaAttributeCustomIV.SIZE else { throw MessageError.notEnoughData }
                 ret.append(try EapAkaAttributeCustomIV.parse(payload: tail.subdata(in: 2..<EapAkaAttributeCustomIV.SIZE)))
             case .AT_AUTN:
+                guard size >= EapAkaAttributeAutn.SIZE else { throw MessageError.notEnoughData }
                 ret.append(try EapAkaAttributeAutn.parse(tail.subdata(in: 2..<EapAkaAttributeAutn.SIZE)))
             case .AT_AUTS:
+                guard size >= EapAkaAttributeAuts.SIZE else { throw MessageError.notEnoughData }
                 ret.append(try EapAkaAttributeAuts.parse(payload: tail.subdata(in: 2..<EapAkaAttributeAuts.SIZE)))
             case .AT_RAND:
+                guard size >= EapAkaAttributeRand.SIZE else { throw MessageError.notEnoughData }
                 ret.append(try EapAkaAttributeRand.parse(tail.subdata(in: 2..<EapAkaAttributeRand.SIZE)))
             case .AT_CLIENT_ERROR_CODE:
+                guard size >= EapAkaAttributeClientErrorCode.SIZE else { throw MessageError.notEnoughData }
                 ret.append(try EapAkaAttributeClientErrorCode.parse(payload: tail.subdata(in: 2..<EapAkaAttributeClientErrorCode.SIZE)))
             case .none:
                 throw MessageError.notEnoughData
