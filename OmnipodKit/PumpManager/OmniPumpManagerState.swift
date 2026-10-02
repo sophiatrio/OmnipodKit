@@ -171,8 +171,6 @@ public struct OmniPumpManagerState: RawRepresentable, Equatable {
     }
 
     public init?(rawValue: RawValue) {
-        log.bleDebug("[OmniPumpManagerState] init with rawValue: %{public}@", String(describing: rawValue))
-
         let isOnboarded = rawValue["isOnboarded"] as? Bool ?? false
 
         let podState: PodState?

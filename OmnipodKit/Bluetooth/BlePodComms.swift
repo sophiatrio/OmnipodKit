@@ -303,8 +303,6 @@ class BlePodComms: PodComms {
             return nil
         case .SessionKeys(let keys):
             log.bleDebug("@@@ Session Established, msgSequenceNumber: %{public}@", String(keys.msgSequenceNumber))
-            //log.bleDebug("@@@ CK: %{public}@", keys.ck.hexadecimalString)
-            //log.bleDebug("@@@ NoncePrefix: %{public}@", keys.nonce.prefix.hexadecimalString)
 
             // The O5 app seems to set the Omnipod message # to 0 at the start of a new EAP-AKA
             // session while OmniBLE tries to use the next sequential Omnipod message number.
@@ -322,7 +320,7 @@ class BlePodComms: PodComms {
                 log.bleDebug("@@@ Setting podState transport state to %{public}@", transportState.inlineDescription)
                 podState!.bleMessageTransportState = transportState
             } else {
-                log.bleDebug("@@@ Used keys %{public}@ to create transport state %{public}@", String(describing: keys), transportState.inlineDescription)
+                log.bleDebug("@@@ Created transport state %{public}@", transportState.inlineDescription)
             }
             return transportState
         }

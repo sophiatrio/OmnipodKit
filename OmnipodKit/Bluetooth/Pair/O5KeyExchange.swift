@@ -64,9 +64,7 @@ class O5KeyExchange {
 
         ltk = Data(capacity: O5KeyExchange.CMAC_SIZE)
 
-        log.default("O5KeyExchange init: controllerId=%{public}@", self.controllerIdData.hexadecimalString)
-        log.bleDebug("  pdmNonce:  %{public}@", pdmNonce.hexadecimalString)
-        log.bleDebug("  pdmPublic: %{public}@", pdmPublic.hexadecimalString)
+        log.default("O5KeyExchange initialized")
     }
 
     func o5updatePodPublicData(_ payload: Data) throws {
@@ -75,14 +73,11 @@ class O5KeyExchange {
         }
         podPublic = payload.subdata(in: 0..<O5KeyExchange.PUBLIC_KEY_SIZE)
         podNonce = payload.subdata(in: O5KeyExchange.PUBLIC_KEY_SIZE..<O5KeyExchange.PUBLIC_KEY_SIZE + O5KeyExchange.NONCE_SIZE)
-        log.bleDebug("  podPublic: %{public}@", podPublic.hexadecimalString)
-        log.bleDebug("  podNonce:  %{public}@", podNonce.hexadecimalString)
         try o5generateKeys()
     }
 
     private func o5generateKeys() throws {
         let sharedSecret = try keyGenerator.computeSharedSecret(pdmPrivate, podPublic)
-        log.bleDebug("  sharedSecret: %{public}@", sharedSecret.hexadecimalString)
         log.bleDebug("  KDF flags: controllerID source=fixed zeros")
 
         var data = Data()
@@ -96,7 +91,7 @@ class O5KeyExchange {
         data.append(self.podPublic)
         data.append(withUnsafeBytes(of: UInt64(sharedSecret.count).bigEndian, { Data($0) }))
         data.append(sharedSecret)
-        log.info("  KDF input (%{public}d bytes): %{public}@", data.count, data.hexadecimalString)
+        log.info("  KDF input: %{public}d bytes", data.count)
 
         let derivedKey = data.sha256()
         guard derivedKey.count == 32 else {
@@ -104,7 +99,7 @@ class O5KeyExchange {
         }
         self.conf = derivedKey.subdata(in: 0..<16)
         self.ltk = derivedKey.subdata(in: 16..<32)
-        log.default("Key derivation complete: conf=%{public}@, ltk=%{public}@", conf.hexadecimalString, ltk.hexadecimalString)
+        log.default("Key derivation complete")
     }
     
     private static let SPS_NONCE_SIZE = 13
